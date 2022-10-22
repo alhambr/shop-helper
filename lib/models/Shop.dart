@@ -1,17 +1,24 @@
 class ShopItem {
+  int id;
   String title;
-  bool done;
+  int done;
 
-  ShopItem({required this.title, required this.done});
+  ShopItem({required this.id ,required this.title, required this.done});
 
   toJSONEncodable() {
-    Map<String, dynamic> map = {};
-    map['title'] = title;
-    map['done'] = done;
+    Map<String, dynamic> map = {
+      'id': id,
+      'title': title,
+      'done': done,
+    };
     return map;
   }
-}
 
+  @override
+  toString() {
+    return ('$id -  $title - $done\n');
+  }
+}
 
 
 class ShopList {

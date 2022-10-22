@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:shop_helper/models/Shop.dart';
 import 'package:localstorage/localstorage.dart';
@@ -12,45 +14,65 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final ShopList list = ShopList();
   final LocalStorage storage = LocalStorage('shop_list');
+  int id = 0;
   bool initialized = false;
   TextEditingController controller = new TextEditingController();
+  late FocusNode focusNode;
 
 
   @override
   void dispose() {
     controller.dispose();
+    focusNode.dispose();
     super.dispose();
   }
 
   _toggleItem(ShopItem item) {
     setState(() {
-      item.done = !item.done;
+      item.done = item.done==0?1:0;
       _saveToStorage();
     });
   }
 
   _addItem(String title) {
-    setState(() {
-      list.items.add(ShopItem(title: title, done: false));
-      _saveToStorage();
-    });
+    if(title.isNotEmpty) {
+      setState(() {
+        id++;
+        list.items.add(ShopItem(id: id, title: title, done: 0));
+        _saveToStorage();
+      });
+    }
+    FocusManager.instance.primaryFocus?.unfocus();
   }
 
   _saveToStorage() {
     storage.setItem('list', list.toJSONEncodable());
+    storage.setItem('id', id);
+    _sortList();
   }
 
   _clearStorage() async {
     await storage.clear();
-
     setState(() {
       list.items = storage.getItem('list') ?? [];
+      id = storage.getItem('id') ?? 0;
+    });
+  }
+
+  _sortList() {
+    list.items.sort((a,b) {
+      int cmp = a.done.compareTo(b.done);
+      if (cmp != 0) return cmp;
+      return b.id.compareTo(a.id);
     });
   }
 
 
   @override
   Widget build(BuildContext context) {
+
+    focusNode = FocusNode();
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color.fromRGBO(236, 238, 245, 1),
@@ -76,13 +98,16 @@ class _HomePageState extends State<HomePage> {
 
             if(!initialized) {
               var items = storage.getItem('list');
+              id = storage.getItem('id') ?? 0;
               if(items != null) {
                 list.items = List<ShopItem>.from(
                     (items as List).map((item) => ShopItem(
+                        id: item['id'],
                         title: item['title'],
-                        done: item['done'])
-                    ),
+                        done: item['done']
+                    )),
                 ).toList();
+                _sortList();
               }
               initialized = true;
             }
@@ -90,10 +115,15 @@ class _HomePageState extends State<HomePage> {
               children: [
                 ListTile(
                   title: TextField(
-                      controller: controller,
-                      decoration: InputDecoration(
-                        labelText: 'Что надо купить?',
-                      ),
+                    focusNode: focusNode,
+                    controller: controller,
+                    decoration: InputDecoration(
+                      labelText: 'Что надо купить?',
+                    ),
+                    onSubmitted: (_) {
+                      _addItem(controller.text);
+                      controller.clear();
+                    },
                   ),
                   trailing: IconButton(
                       onPressed: () {
@@ -122,15 +152,15 @@ class _HomePageState extends State<HomePage> {
                           // background: Container(color: Colors.red),
                           child: Card(
                             child: ListTile(
-                              title: Text(item.title),
+                              title: item.done==0?Text('${item.title}'):Text('${item.title}', style: TextStyle(decoration: TextDecoration.lineThrough)),
                               leading: IconButton(
                                   // onPressed: _toggleItem(item),
                                   onPressed: () {
                                     _toggleItem(item);
                                   },
-                                  icon: !item.done?Icon(Icons.check_box_outline_blank):Icon(Icons.check_box)
+                                  icon: item.done==0?Icon(Icons.check_box_outline_blank):Icon(Icons.check_box)
                               ),
-                              trailing: Icon(Icons.remove_circle),
+                              // trailing: Icon(Icons.remove_circle),
                             ),
                           ),
                         );
@@ -141,6 +171,10 @@ class _HomePageState extends State<HomePage> {
             );
           },
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: focusNode.requestFocus,
+        child: const Icon(Icons.add),
       ),
     );
   }
