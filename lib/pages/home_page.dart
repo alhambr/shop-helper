@@ -71,110 +71,139 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
 
+    const Color colorBlue = Color.fromRGBO(32, 113, 249, 1);
+
     focusNode = FocusNode();
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color.fromRGBO(236, 238, 245, 1),
+        backgroundColor: Color.fromRGBO(249, 250, 255, 1),
         title: const Text(
           'Shop Helper', style: TextStyle(color: Colors.black54),),
         centerTitle: true,
         actions: [
           IconButton(
-              onPressed: _clearStorage, icon: Icon(Icons.delete, color: Colors.redAccent,))
+              onPressed: _clearStorage, icon: Icon(Icons.delete, color: Colors.redAccent, size: 35.0,))
         ],
       ),
-      body: Container(
-        color: const Color.fromRGBO(247, 248, 251, 1),
-        constraints: const BoxConstraints.expand(),
-        child: FutureBuilder(
-          future: storage.ready,
-          builder: (BuildContext context, AsyncSnapshot snapshot) {
-            if(snapshot.data == null) {
-              return Center(
-                child: CircularProgressIndicator(color: Colors.blue,),
-              );
-            }
-
-            if(!initialized) {
-              var items = storage.getItem('list');
-              id = storage.getItem('id') ?? 0;
-              if(items != null) {
-                list.items = List<ShopItem>.from(
-                    (items as List).map((item) => ShopItem(
-                        id: item['id'],
-                        title: item['title'],
-                        done: item['done']
-                    )),
-                ).toList();
-                _sortList();
+      body: SafeArea(
+        child: Container(
+          color: const Color.fromRGBO(249, 250, 255, 1),
+          constraints: const BoxConstraints.expand(),
+          child: FutureBuilder(
+            future: storage.ready,
+            builder: (BuildContext context, AsyncSnapshot snapshot) {
+              if(snapshot.data == null) {
+                return Center(
+                  child: CircularProgressIndicator(color: Colors.blue,),
+                );
               }
-              initialized = true;
-            }
-            return Column(
-              children: [
-                ListTile(
-                  title: TextField(
-                    focusNode: focusNode,
-                    controller: controller,
-                    decoration: InputDecoration(
-                      labelText: 'Что надо купить?',
-                    ),
-                    onSubmitted: (_) {
-                      _addItem(controller.text);
-                      controller.clear();
-                    },
-                  ),
-                  trailing: IconButton(
-                      onPressed: () {
+
+              if(!initialized) {
+                var items = storage.getItem('list');
+                id = storage.getItem('id') ?? 0;
+                if(items != null) {
+                  list.items = List<ShopItem>.from(
+                      (items as List).map((item) => ShopItem(
+                          id: item['id'],
+                          title: item['title'],
+                          done: item['done']
+                      )),
+                  ).toList();
+                  _sortList();
+                }
+                initialized = true;
+              }
+              return Column(
+                children: [
+                  SizedBox(height: 20,),
+                  ListTile(
+                    title: TextField(
+
+                      focusNode: focusNode,
+                      controller: controller,
+                      decoration: InputDecoration(
+                        labelText: 'Что купить?',
+                      ),
+                      onSubmitted: (_) {
                         _addItem(controller.text);
                         controller.clear();
                       },
-                      icon: Icon(Icons.save, color: Colors.blue,)
+                    ),
+                    trailing: IconButton(
+                        onPressed: () {
+                          _addItem(controller.text);
+                          controller.clear();
+                        },
+                        icon: Icon(Icons.save, color: colorBlue, size: 35.0,)
+                    ),
                   ),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: ListView.builder(
-                      itemCount: list.items.length,
-                      itemBuilder: (context, index) {
-                        final item = list.items[index] as ShopItem;
-                        return Dismissible(
-                          background: Container(),
-                          key: Key(item.title),
-                          onDismissed: (direction) {
-                            // Remove the item from the data source.
-                            setState(() {
-                              list.items.removeAt(index);
-                              _saveToStorage();
-                            });
-                          },
-                          // background: Container(color: Colors.red),
-                          child: Card(
-                            child: ListTile(
-                              title: item.done==0?Text('${item.title}'):Text('${item.title}', style: TextStyle(decoration: TextDecoration.lineThrough)),
-                              leading: IconButton(
-                                  // onPressed: _toggleItem(item),
-                                  onPressed: () {
-                                    _toggleItem(item);
-                                  },
-                                  icon: item.done==0?Icon(Icons.check_box_outline_blank):Icon(Icons.check_box)
+                  SizedBox(height: 20,),
+                  Text('Список покупок'.toUpperCase(), style: TextStyle(fontSize: 20, color: Color.fromRGBO(131, 143, 178,1)), textAlign: TextAlign.left,),
+                  SizedBox(height: 20,),
+                  Expanded(
+                    flex: 1,
+                    child: ListView.builder(
+                        itemCount: list.items.length,
+                        itemBuilder: (context, index) {
+                          final item = list.items[index] as ShopItem;
+                          return Dismissible(
+                            background: Container(),
+                            key: Key(item.title),
+                            onDismissed: (direction) {
+                              // Remove the item from the data source.
+                              setState(() {
+                                list.items.removeAt(index);
+                                _saveToStorage();
+                              });
+                            },
+                            child: GestureDetector(
+                              // onTap: _toggleItem(item),
+                              onTap: () {
+                                _toggleItem(item);
+                              },
+                              child: Container(
+                                height: 60,
+                                margin: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 20.0),
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(20),
+                                  color: Colors.white,
+                                ),
+                                child: ListTile(
+                                  title: item.done == 0?
+                                    Text('${item.title}', style: TextStyle(fontSize: 22, color: Color.fromRGBO(60, 66, 85, 1)),)
+                                        :
+                                    Text('${item.title}', style: TextStyle(fontSize: 22, color: Color.fromRGBO(60, 66, 85, 1), decoration: TextDecoration.lineThrough)),
+                                  leading: IconButton(
+                                      onPressed: () {
+                                        // _toggleItem(item);
+                                        /*NOP*/
+                                      },
+                                      icon: item.done == 0?
+                                        Icon(Icons.circle_outlined, color: Color.fromRGBO(39, 108, 212, 1), size: 35,)
+                                          :
+                                        Icon(Icons.check_circle_rounded, color: Color.fromRGBO(202, 215, 249, 1), size: 35,)
+                                  ),
+                                    // trailing: Icon(Icons.remove_circle),
+                                ),
+
                               ),
-                              // trailing: Icon(Icons.remove_circle),
                             ),
-                          ),
-                        );
-                      }
+                          );
+                        }
+                    ),
                   ),
-                ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: focusNode.requestFocus,
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, color: Colors.white,),
+        backgroundColor: colorBlue,
       ),
     );
   }
